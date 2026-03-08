@@ -14,6 +14,8 @@
   --t-pulse:    7s;
   --t-spin:     28s;
   --t-flicker:  11s;
+  --t-env:      18s;   /* environmental scene drift — visible within ~10s */
+  --t-rock:     5s;    /* jar rock — two full cycles per 10s */
 }
 
 /* ─── Reset & Base ───────────────────────────────────────────────────────── */
@@ -34,14 +36,30 @@ body {
   color: var(--ink);
   font-family: Georgia, 'Times New Roman', serif;
   position: relative;
-  /* Subtle warm paper feel via vignette */
-  background-image:
-    radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0,0,0,0.045) 100%);
 }
 
 /* Jitter state — very brief, class added by JS */
 body.jitter {
   transform: translate(1px, 0.5px);
+}
+
+/* ─── Animated vignette (paper instability) ──────────────────────────────── */
+/* The vignette lives on ::before so it can breathe independently.           */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(ellipse at 50% 50%, transparent 58%, rgba(0,0,0,0.055) 100%);
+  pointer-events: none;
+  z-index: 1;
+  animation: paper-breathe var(--t-breathe) ease-in-out infinite 1.5s;
+}
+
+@keyframes paper-breathe {
+  0%   { opacity: 0.75; }
+  35%  { opacity: 1.0;  }
+  65%  { opacity: 0.85; }
+  100% { opacity: 0.75; }
 }
 
 /* ─── Scanline overlay ───────────────────────────────────────────────────── */
@@ -70,6 +88,8 @@ body::after {
 }
 
 /* ─── Stage (center layout) ──────────────────────────────────────────────── */
+/* stage-drift gives the focal composition a gentle environmental float.     */
+/* The corners drift in the opposite direction (zone-drift) → parallax depth */
 .stage {
   position: fixed;
   inset: 0;
@@ -77,18 +97,35 @@ body::after {
   align-items: center;
   justify-content: center;
   z-index: 10;
+  animation: stage-drift var(--t-env) ease-in-out infinite;
+}
+
+@keyframes stage-drift {
+  0%   { transform: translate(0,       0); }
+  25%  { transform: translate(2px,    -1.5px); }
+  55%  { transform: translate(-1.5px,  1px); }
+  80%  { transform: translate(0.8px,  -0.6px); }
+  100% { transform: translate(0,       0); }
 }
 
 /* ─── Registration ghost (behind logo) ───────────────────────────────────── */
+/* Breathes at 3.5s offset — antiphase to logo, swells when logo contracts. */
 .register-ghost {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(calc(-50% + 1.5px), calc(-50% + 1px));
   width: 420px;
-  opacity: 0.05;
   pointer-events: none;
   z-index: 9;
+  animation: ghost-breathe var(--t-breathe) ease-in-out infinite 3.5s;
+}
+
+@keyframes ghost-breathe {
+  0%   { opacity: 0.04; }
+  35%  { opacity: 0.07; }
+  65%  { opacity: 0.035; }
+  100% { opacity: 0.04; }
 }
 
 /* ─── Logo wrap ──────────────────────────────────────────────────────────── */
@@ -112,12 +149,12 @@ body::after {
   height: auto;
 }
 
-/* Logo breathe: scale + micro rotation */
+/* Enhanced logo-breathe: wider scale range + subtle Y lift = organic rise */
 @keyframes logo-breathe {
-  0%   { transform: scale(0.996) rotate(-0.3deg); }
-  35%  { transform: scale(1.004) rotate(0.2deg); }
-  65%  { transform: scale(1.002) rotate(-0.1deg); }
-  100% { transform: scale(0.996) rotate(-0.3deg); }
+  0%   { transform: scale(0.994) rotate(-0.3deg) translateY(0.5px); }
+  35%  { transform: scale(1.006) rotate( 0.2deg) translateY(-0.5px); }
+  65%  { transform: scale(1.002) rotate(-0.1deg) translateY(0); }
+  100% { transform: scale(0.994) rotate(-0.3deg) translateY(0.5px); }
 }
 
 /* ─── Speech bubble ──────────────────────────────────────────────────────── */
@@ -172,11 +209,21 @@ body::after {
 }
 
 /* ─── Registration marks (zone) ──────────────────────────────────────────── */
+/* Drifts opposite to .stage at smaller amplitude → background parallax.    */
 .zone {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 5;
+  animation: zone-drift var(--t-env) ease-in-out infinite;
+}
+
+@keyframes zone-drift {
+  0%   { transform: translate(0,      0); }
+  25%  { transform: translate(-0.6px,  0.4px); }
+  55%  { transform: translate( 0.4px, -0.3px); }
+  80%  { transform: translate(-0.2px,  0.15px); }
+  100% { transform: translate(0,      0); }
 }
 
 .corner {
@@ -210,6 +257,13 @@ body::after {
   100% { opacity: 0.35; }
 }
 
+/* Corner-flash idle event: cuts animation, flares briefly then restores */
+.zone.corner-flash .corner {
+  animation: none;
+  opacity: 0.82;
+  transition: opacity 0.12s ease;
+}
+
 /* ─── Surreal elements (all absolutely positioned) ───────────────────────── */
 .el {
   position: fixed;
@@ -217,48 +271,56 @@ body::after {
   z-index: 6;
 }
 
-/* Cloud + mountain — top-right */
+/* Cloud + mountain — top-right (foreground: z-index 8, slightly more opaque) */
 #el-cloud {
   top: 12%;
   right: 10%;
   width: 90px;
-  opacity: 0.72;
+  opacity: 0.78;
+  z-index: 8;
   animation: el-float var(--t-float) ease-in-out infinite;
 }
 
-/* Pear — left-center */
+/* Pear — left-center (midground: z-index 7) */
 #el-pear {
   top: 42%;
   left: 8%;
   width: 38px;
   opacity: 0.68;
+  z-index: 7;
   animation: el-drop var(--t-drop) cubic-bezier(0.4, 0, 1, 1) infinite;
 }
 
-/* Vertical plane — top-left */
+/* Vertical plane — top-left (midground: z-index 7) */
 #el-plane {
   top: 8%;
   left: 16%;
   width: 28px;
   opacity: 0.6;
+  z-index: 7;
   animation: el-drift var(--t-drift) ease-in-out infinite,
              el-float-slow 18s ease-in-out infinite;
 }
 
-/* Jar with bubbles — bottom-right */
+/* Jar with bubbles — bottom-right (mid-background: z-index 6)             */
+/* The PRIMARY LOOPING SURREAL OBJECT: rocks gently + endless rising bubbles */
 #el-jar {
   bottom: 12%;
   right: 12%;
   width: 46px;
-  animation: el-pulse var(--t-pulse) ease-in-out infinite;
+  z-index: 6;
+  transform-origin: center bottom;
+  animation: el-pulse var(--t-pulse) ease-in-out infinite,
+             el-rock  var(--t-rock)  ease-in-out infinite;
 }
 
-/* Sun — bottom-left */
+/* Sun — bottom-left (mid-background: z-index 6) */
 #el-sun {
   bottom: 14%;
   left: 11%;
   width: 58px;
   opacity: 0.55;
+  z-index: 6;
   animation: el-spin var(--t-spin) linear infinite;
   transform-origin: center center;
 }
@@ -315,6 +377,15 @@ body::after {
 @keyframes el-spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
+}
+
+/* Jar rock — the looping surreal anchor. Rocks from its base. */
+@keyframes el-rock {
+  0%   { transform: rotate( 0.0deg); }
+  22%  { transform: rotate( 1.6deg); }
+  50%  { transform: rotate( 0.0deg); }
+  75%  { transform: rotate(-1.6deg); }
+  100% { transform: rotate( 0.0deg); }
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */

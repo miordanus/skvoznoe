@@ -66,27 +66,42 @@
     // Allow click focus to toggle for accessibility
   });
 
-  // ── Page jitter ────────────────────────────────────────────────────────────
-  // Fires every ~42–70 seconds. Adds 'jitter' class for 80ms.
-  // CSS translates body by (1px, 0.5px) — barely perceptible.
-  // Creates a haunted-by-repetition sensation without being a gimmick.
+  // ── Idle events ────────────────────────────────────────────────────────────
+  // Two event types, randomly selected, fire every 7–12 seconds so effects
+  // are noticeable within the first 10 seconds of watching.
+  //
+  // Type 1 (60%): body micro-jitter — brief haunted-by-repetition sensation.
+  // Type 2 (40%): corner-flash — registration marks flare up for 280ms,
+  //               as if the printing press briefly hiccupped.
 
-  var JITTER_MIN  = 42000;
-  var JITTER_RAND = 28000;
-  var JITTER_HOLD = 80;
+  var IDLE_MIN  = 7000;
+  var IDLE_RAND = 5000;
+  var IDLE_HOLD = 80;
 
-  function scheduleJitter() {
-    var delay = JITTER_MIN + Math.random() * JITTER_RAND;
-    setTimeout(function () {
+  function doIdleEvent() {
+    if (Math.random() < 0.6) {
+      // Type 1: body micro-jitter
       document.body.classList.add('jitter');
       setTimeout(function () {
         document.body.classList.remove('jitter');
-      }, JITTER_HOLD);
-      scheduleJitter();
-    }, delay);
+      }, IDLE_HOLD);
+    } else {
+      // Type 2: corner-flash
+      var zone = document.querySelector('.zone');
+      zone.classList.add('corner-flash');
+      setTimeout(function () {
+        zone.classList.remove('corner-flash');
+      }, 280);
+    }
+    scheduleIdleEvent();
   }
 
-  scheduleJitter();
+  function scheduleIdleEvent() {
+    var delay = IDLE_MIN + Math.random() * IDLE_RAND;
+    setTimeout(doIdleEvent, delay);
+  }
+
+  scheduleIdleEvent();
 
   // ── Animation stagger init ─────────────────────────────────────────────────
   // Give each surreal element a random animation-delay offset so they
