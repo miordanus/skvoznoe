@@ -1,36 +1,23 @@
-what is broken
-- Production is wired to branch `claude/skvoznoe-landing-page-P7f5y` (shown in Vercel), which is not your intended stable branch flow.
-- Deployment behavior is relying on dashboard-only settings; no repo-level routing config exists, so route handling is fragile.
+# DEPLOY RESET
 
-what to recreate
-- Recreate Vercel project import from `claude/skvoznoe-landing-page-P7f5y`.
-- Set Production Branch to `main` (or your actual long-lived branch), not `claude/skvoznoe-landing-page-P7f5y`.
-- Keep app root at repository root.
+## Цель
+Сделать Vercel-конфигурацию воспроизводимой из репозитория и убрать критичные настройки из UI.
 
-exact values to paste into Vercel
-- repo: claude/skvoznoe-landing-page-P7f5y
-- production branch: main
-- root directory: ./
-- framework preset: Other
-- build command: (leave empty)
-- output directory: (leave empty)
-- install command: (leave empty)
+## Что проверить в Vercel Project Settings
+1. **Production Branch** = долгоживущая ветка (`main`/`master`/release), не временная `feature/*`, `claude/*`, `codex/*`.
+2. **Root Directory** = `./`.
+3. **Framework Preset** соответствует стеку. Для текущего статического SPA — **Other / No build step**.
 
-spa rewrites
-- needed (to prevent 404 on any direct route)
+## Источник правды в репозитории
+Критичные параметры закреплены в `vercel.json`:
+- SPA rewrite только для клиентских маршрутов (без расширений файлов),
+- clean URLs,
+- явные build/install/output значения для статического деплоя.
 
-exact files to change
-- add `vercel.json` at repo root with:
+> После изменений в UI сверяйте их с `vercel.json` и возвращайте различия в репозиторий.
 
-```json
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "cleanUrls": true,
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
-}
-```
+## Минимальный чеклист перед релизом
+- [ ] **Branch:** Production Branch указывает на долгоживущую ветку.
+- [ ] **Root:** Root Directory = `./`.
+- [ ] **Rewrite:** правило не перехватывает файлы ассетов (`.webp`, `.css`, `.js`, и т.д.).
+- [ ] **Assets path:** изображения и статика доступны по ожидаемым путям (`/scene/*`, `/assets/*` при использовании).
