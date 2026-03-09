@@ -24,10 +24,15 @@ const sceneObjects = [
 
 const sceneRoot = document.getElementById("scene-objects");
 const assetHint = document.getElementById("asset-hint");
+const modeToggle = document.getElementById("mode-toggle");
+const modeHint = document.getElementById("mode-hint");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const MODE_STORAGE_KEY = "skvoznoe-motion-mode";
 let scrollY = 0;
 let ticking = false;
 const objectNodes = [];
+let parallaxEnabled = false;
+let modePreference = "static";
 
 function setVar(el, name, value) {
   if (value !== undefined && value !== null) el.style.setProperty(name, value);
@@ -83,6 +88,49 @@ function onScroll() {
   }
 }
 
+function updateModeUi() {
+  if (!modeToggle) return;
+
+  modeToggle.setAttribute("aria-pressed", String(parallaxEnabled));
+  modeToggle.textContent = parallaxEnabled ? "СБШ: ON" : "СБШ: OFF";
+
+  if (reduceMotion.matches) {
+    if (modeHint) {
+      modeHint.hidden = false;
+      modeHint.textContent = "У вас включен reduced motion — оставляем статику.";
+    }
+  } else {
+    if (modeHint) {
+      modeHint.hidden = true;
+      modeHint.textContent = "";
+    }
+  }
+}
+
+function setSceneMode(mode, options = {}) {
+  const shouldPersist = options.persist !== false;
+
+  modePreference = mode;
+  parallaxEnabled = mode === "parallax" && !reduceMotion.matches;
+  document.body.classList.toggle("parallax-enabled", parallaxEnabled);
+
+  window.removeEventListener("scroll", onScroll);
+
+  if (parallaxEnabled) {
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+  } else {
+    scrollY = 0;
+    applyParallax();
+  }
+
+  if (shouldPersist) {
+    localStorage.setItem(MODE_STORAGE_KEY, modePreference);
+  }
+
+  updateModeUi();
+}
+
 function showMissingAssets(missing) {
   if (!missing.length) return;
   assetHint.hidden = false;
@@ -108,6 +156,14 @@ probes.forEach((img, index) => {
   img.addEventListener("load", settle);
 });
 
-window.addEventListener("scroll", onScroll, { passive: true });
-reduceMotion.addEventListener?.("change", applyParallax);
-onScroll();
+modeToggle?.addEventListener("click", () => {
+  const nextMode = modePreference === "parallax" ? "static" : "parallax";
+  setSceneMode(nextMode);
+});
+
+reduceMotion.addEventListener?.("change", () => {
+  setSceneMode(modePreference, { persist: false });
+});
+
+const savedMode = localStorage.getItem(MODE_STORAGE_KEY);
+setSceneMode(savedMode === "parallax" ? "parallax" : "static", { persist: false });
