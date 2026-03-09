@@ -1,36 +1,23 @@
-what is broken
-- Production is wired to branch `claude/skvoznoe-landing-page-P7f5y` (shown in Vercel), which is not your intended stable branch flow.
-- Deployment behavior is relying on dashboard-only settings; no repo-level routing config exists, so route handling is fragile.
+what is now fixed
+- Runtime зафиксирован как **статический** (`index.html + scene-config.js + script.js`) без React build pipeline.
+- Источник правды для координат и параллакса теперь один: `scene-config.js`.
+- Неиспользуемая React-ветка `src/components/HeroScene/*` удалена, чтобы её нельзя было случайно править как runtime-код.
 
-what to recreate
-- Recreate Vercel project import from `claude/skvoznoe-landing-page-P7f5y`.
-- Set Production Branch to `main` (or your actual long-lived branch), not `claude/skvoznoe-landing-page-P7f5y`.
-- Keep app root at repository root.
-
-exact values to paste into Vercel
-- repo: claude/skvoznoe-landing-page-P7f5y
-- production branch: main
-- root directory: ./
-- framework preset: Other
-- build command: (leave empty)
-- output directory: (leave empty)
-- install command: (leave empty)
+what to keep in Vercel
+- repo: `claude/skvoznoe-landing-page-P7f5y`
+- production branch: `main` (или ваш постоянный stable branch)
+- root directory: `./`
+- framework preset: `Other`
+- build command: (empty)
+- output directory: (empty)
+- install command: (empty)
 
 spa rewrites
 - needed (to prevent 404 on any direct route)
+- configured in `vercel.json`
 
-exact files to change
-- add `vercel.json` at repo root with:
-
-```json
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "cleanUrls": true,
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
-}
-```
+where to edit scene parameters
+- edit only `scene-config.js`:
+  - `parallaxSpeed` for layer speed
+  - `objects` for coordinates/sizes/rotation/mobile overrides
+- `script.js` should not duplicate scene geometry values.
