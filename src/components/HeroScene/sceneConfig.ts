@@ -28,7 +28,7 @@ export const PARALLAX_SPEED: Record<SceneLayer, number> = {
 
 export const sceneObjects: SceneObject[] = [
   {
-    src: "/public/scene/ostrich.webp",
+    src: "/scene/ostrich.webp",
     alt: "ostrich engraving",
     layer: "back",
     top: "5%",
@@ -42,7 +42,7 @@ export const sceneObjects: SceneObject[] = [
     mobile: { top: "6%", left: "-16%", width: 220 },
   },
   {
-    src: "/public/scene/pelican.webp",
+    src: "/scene/pelican.webp",
     alt: "pelican engraving",
     layer: "back",
     top: "4%",
@@ -56,7 +56,7 @@ export const sceneObjects: SceneObject[] = [
     mobile: { top: "8%", left: "62%", width: 180 },
   },
   {
-    src: "/public/scene/wine_press.webp",
+    src: "/scene/wine_press.webp",
     alt: "wine press engraving",
     layer: "back",
     top: "41%",
@@ -71,7 +71,7 @@ export const sceneObjects: SceneObject[] = [
   },
 
   {
-    src: "/public/scene/duck_roast.webp",
+    src: "/scene/duck_roast.webp",
     alt: "duck roast engraving",
     layer: "mid",
     top: "18%",
@@ -85,7 +85,7 @@ export const sceneObjects: SceneObject[] = [
     mobile: { top: "18%", left: "42%", width: 220 },
   },
   {
-    src: "/public/scene/sumo.webp",
+    src: "/scene/sumo.webp",
     alt: "sumo engraving",
     layer: "mid",
     top: "39%",
@@ -99,7 +99,7 @@ export const sceneObjects: SceneObject[] = [
     mobile: { hidden: true },
   },
   {
-    src: "/public/scene/fish.webp",
+    src: "/scene/fish.webp",
     alt: "fish engraving",
     layer: "mid",
     top: "71%",
@@ -113,7 +113,7 @@ export const sceneObjects: SceneObject[] = [
     mobile: { top: "78%", left: "4%", width: 150 },
   },
   {
-    src: "/public/scene/book.webp",
+    src: "/scene/book.webp",
     alt: "book engraving",
     layer: "mid",
     top: "58%",
@@ -127,7 +127,7 @@ export const sceneObjects: SceneObject[] = [
     mobile: { hidden: true },
   },
   {
-    src: "/public/scene/web_designer.webp",
+    src: "/scene/web_designer.webp",
     alt: "web designer engraving",
     layer: "mid",
     top: "79%",
@@ -142,7 +142,7 @@ export const sceneObjects: SceneObject[] = [
   },
 
   {
-    src: "/public/scene/knuckles.webp",
+    src: "/scene/knuckles.webp",
     alt: "knuckles engraving",
     layer: "front",
     top: "42%",
@@ -156,7 +156,7 @@ export const sceneObjects: SceneObject[] = [
     mobile: { top: "48%", left: "0%", width: 160 },
   },
   {
-    src: "/public/scene/gold_teeth.webp",
+    src: "/scene/gold_teeth.webp",
     alt: "gold teeth engraving",
     layer: "front",
     top: "64%",
@@ -170,7 +170,7 @@ export const sceneObjects: SceneObject[] = [
     mobile: { top: "72%", left: "38%", width: 180 },
   },
   {
-    src: "/public/scene/axe_head.webp",
+    src: "/scene/axe_head.webp",
     alt: "axe in head engraving",
     layer: "front",
     top: "12%",
@@ -184,7 +184,7 @@ export const sceneObjects: SceneObject[] = [
     mobile: { top: "6%", left: "38%", width: 160 },
   },
   {
-    src: "/public/scene/matchbox.webp",
+    src: "/scene/matchbox.webp",
     alt: "matchbox engraving",
     layer: "front",
     top: "61%",
@@ -198,7 +198,7 @@ export const sceneObjects: SceneObject[] = [
     mobile: { top: "70%", left: "-2%", width: 130 },
   },
   {
-    src: "/public/scene/yogi.webp",
+    src: "/scene/yogi.webp",
     alt: "yogi engraving",
     layer: "front",
     top: "73%",
@@ -212,7 +212,7 @@ export const sceneObjects: SceneObject[] = [
     mobile: { hidden: true },
   },
   {
-    src: "/public/scene/priest.webp",
+    src: "/scene/priest.webp",
     alt: "priest engraving",
     layer: "front",
     top: "15%",
@@ -226,7 +226,7 @@ export const sceneObjects: SceneObject[] = [
     mobile: { hidden: true },
   },
   {
-    src: "/public/scene/salo.webp",
+    src: "/scene/salo.webp",
     alt: "salo engraving",
     layer: "front",
     top: "81%",
