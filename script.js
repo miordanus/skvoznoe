@@ -1,118 +1,113 @@
-(function () {
-  'use strict';
+const PARALLAX_SPEED = {
+  back: 0.12,
+  mid: 0.32,
+  front: 0.55,
+};
 
-  var logoWrap = document.getElementById('logo-wrap');
-  var bubble   = document.getElementById('bubble');
-  var mobileAutoHideTimer = null;
+const sceneObjects = [
+  { src: "scene/ostrich.webp", alt: "ostrich engraving", layer: "back", top: "5%", left: "6%", width: 420, rotate: -6, z: 1, floatAmplitude: 10, floatDuration: 15, floatDelay: 0.2, mobile: { top: "6%", left: "-16%", width: 220 } },
+  { src: "scene/pelican.webp", alt: "pelican engraving", layer: "back", top: "4%", left: "72%", width: 380, rotate: 4, z: 1, floatAmplitude: 8, floatDuration: 17, floatDelay: 1.3, mobile: { top: "8%", left: "62%", width: 180 } },
+  { src: "scene/wine_press.webp", alt: "wine press engraving", layer: "back", top: "41%", left: "78%", width: 300, rotate: -3, z: 1, floatAmplitude: 7, floatDuration: 16, floatDelay: 2.1, mobile: { hidden: true } },
+  { src: "scene/duck_roast.webp", alt: "duck roast engraving", layer: "mid", top: "18%", left: "39%", width: 340, rotate: 2, z: 2, floatAmplitude: 10, floatDuration: 14, floatDelay: 0.8, mobile: { top: "18%", left: "42%", width: 220 } },
+  { src: "scene/sumo.webp", alt: "sumo engraving", layer: "mid", top: "39%", left: "62%", width: 300, rotate: -2, z: 2, floatAmplitude: 8, floatDuration: 13, floatDelay: 1.1, mobile: { hidden: true } },
+  { src: "scene/fish.webp", alt: "fish engraving", layer: "mid", top: "71%", left: "13%", width: 260, rotate: 8, z: 2, floatAmplitude: 9, floatDuration: 12, floatDelay: 2.8, mobile: { top: "78%", left: "4%", width: 150 } },
+  { src: "scene/book.webp", alt: "book engraving", layer: "mid", top: "58%", left: "72%", width: 220, rotate: 12, z: 2, floatAmplitude: 7, floatDuration: 11, floatDelay: 0.5, mobile: { hidden: true } },
+  { src: "scene/web_designer.webp", alt: "web designer engraving", layer: "mid", top: "79%", left: "81%", width: 210, rotate: -4, z: 2, floatAmplitude: 6, floatDuration: 10, floatDelay: 1.7, mobile: { hidden: true } },
+  { src: "scene/knuckles.webp", alt: "knuckles engraving", layer: "front", top: "42%", left: "18%", width: 240, rotate: -12, z: 3, floatAmplitude: 10, floatDuration: 12, floatDelay: 0.4, mobile: { top: "48%", left: "0%", width: 160 } },
+  { src: "scene/gold_teeth.webp", alt: "gold teeth engraving", layer: "front", top: "64%", left: "47%", width: 260, rotate: 2, z: 3, floatAmplitude: 8, floatDuration: 10, floatDelay: 1.9, mobile: { top: "72%", left: "38%", width: 180 } },
+  { src: "scene/axe_head.webp", alt: "axe in head engraving", layer: "front", top: "12%", left: "48%", width: 240, rotate: -8, z: 3, floatAmplitude: 7, floatDuration: 12, floatDelay: 0.9, mobile: { top: "6%", left: "38%", width: 160 } },
+  { src: "scene/matchbox.webp", alt: "matchbox engraving", layer: "front", top: "61%", left: "2%", width: 210, rotate: 6, z: 3, floatAmplitude: 6, floatDuration: 11, floatDelay: 2.2, mobile: { top: "70%", left: "-2%", width: 130 } },
+  { src: "scene/yogi.webp", alt: "yogi engraving", layer: "front", top: "73%", left: "26%", width: 210, rotate: -3, z: 3, floatAmplitude: 8, floatDuration: 13, floatDelay: 1.2, mobile: { hidden: true } },
+  { src: "scene/priest.webp", alt: "priest engraving", layer: "front", top: "15%", left: "82%", width: 220, rotate: 4, z: 3, floatAmplitude: 7, floatDuration: 15, floatDelay: 2.7, mobile: { hidden: true } },
+  { src: "scene/salo.webp", alt: "salo engraving", layer: "front", top: "81%", left: "46%", width: 200, rotate: 1, z: 3, floatAmplitude: 5, floatDuration: 9, floatDelay: 0.6, mobile: { top: "84%", left: "62%", width: 120 } },
+];
 
-  // ── Bubble visibility ──────────────────────────────────────────────────────
+const sceneRoot = document.getElementById("scene-objects");
+const assetHint = document.getElementById("asset-hint");
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+let scrollY = 0;
+let ticking = false;
+const objectNodes = [];
 
-  function showBubble() {
-    bubble.classList.add('visible');
+function setVar(el, name, value) {
+  if (value !== undefined && value !== null) el.style.setProperty(name, value);
+}
+
+function createObject(item) {
+  const node = document.createElement("div");
+  node.className = `object layer-${item.layer}${item.mobile?.hidden ? " mobile-hidden" : ""}`;
+
+  setVar(node, "--top", item.top);
+  setVar(node, "--left", item.left);
+  setVar(node, "--width", `${item.width}px`);
+  setVar(node, "--z", item.z);
+  setVar(node, "--rotate", `${item.rotate}deg`);
+  setVar(node, "--float-amplitude", `${item.floatAmplitude}px`);
+  setVar(node, "--float-duration", `${item.floatDuration}s`);
+  setVar(node, "--float-delay", `${item.floatDelay}s`);
+  setVar(node, "--mobile-top", item.mobile?.top);
+  setVar(node, "--mobile-left", item.mobile?.left);
+  setVar(node, "--mobile-width", item.mobile?.width ? `${item.mobile.width}px` : undefined);
+
+  const floatWrap = document.createElement("div");
+  floatWrap.className = "float-wrap";
+
+  const img = document.createElement("img");
+  img.src = item.src;
+  img.alt = item.alt;
+  img.loading = "eager";
+  img.decoding = "async";
+
+  floatWrap.appendChild(img);
+  node.appendChild(floatWrap);
+  sceneRoot.appendChild(node);
+
+  objectNodes.push({ node, layer: item.layer });
+  return img;
+}
+
+function applyParallax() {
+  const disabled = reduceMotion.matches;
+  for (const entry of objectNodes) {
+    const y = disabled ? 0 : scrollY * PARALLAX_SPEED[entry.layer];
+    entry.node.style.setProperty("--parallax-y", `${y}px`);
   }
+  ticking = false;
+}
 
-  function hideBubble() {
-    bubble.classList.remove('visible');
-    if (mobileAutoHideTimer) {
-      clearTimeout(mobileAutoHideTimer);
-      mobileAutoHideTimer = null;
-    }
+function onScroll() {
+  scrollY = window.scrollY || window.pageYOffset || 0;
+  if (!ticking) {
+    ticking = true;
+    requestAnimationFrame(applyParallax);
   }
+}
 
-  function toggleBubble() {
-    if (bubble.classList.contains('visible')) {
-      hideBubble();
-    } else {
-      showBubble();
-      // Auto-hide after 3.5s on mobile / touch
-      mobileAutoHideTimer = setTimeout(hideBubble, 3500);
-    }
-  }
+function showMissingAssets(missing) {
+  if (!missing.length) return;
+  assetHint.hidden = false;
+  assetHint.textContent = `Missing assets (${missing.length}). Add WEBP files to public/scene: ${missing.slice(0, 4).join(", ")}${
+    missing.length > 4 ? "…" : ""
+  }`;
+}
 
-  // ── Desktop: hover ─────────────────────────────────────────────────────────
-  logoWrap.addEventListener('mouseenter', showBubble);
-  logoWrap.addEventListener('mouseleave', hideBubble);
+const probes = sceneObjects.map((item) => createObject(item));
+const missing = [];
+let settledCount = 0;
 
-  // ── Keyboard: Enter / Space ────────────────────────────────────────────────
-  logoWrap.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      toggleBubble();
-    }
-    if (e.key === 'Escape') hideBubble();
+function settle() {
+  settledCount += 1;
+  if (settledCount === probes.length) showMissingAssets(missing);
+}
+
+probes.forEach((img, index) => {
+  img.addEventListener("error", () => {
+    missing.push(sceneObjects[index].src.replace("scene/", ""));
+    settle();
   });
+  img.addEventListener("load", settle);
+});
 
-  // ── Mobile: tap ────────────────────────────────────────────────────────────
-  var isTouchDevice = false;
-
-  logoWrap.addEventListener('touchstart', function (e) {
-    isTouchDevice = true;
-    // Prevent the subsequent mouseenter from firing
-    e.preventDefault();
-    toggleBubble();
-  }, { passive: false });
-
-  // Tap anywhere outside logo → hide bubble
-  document.addEventListener('touchstart', function (e) {
-    if (!logoWrap.contains(e.target)) {
-      hideBubble();
-    }
-  }, { passive: true });
-
-  // On mouse devices, only use hover (not click)
-  // so we guard against firing on touch->mouse fallback
-  logoWrap.addEventListener('click', function () {
-    if (isTouchDevice) return;
-    // Allow click focus to toggle for accessibility
-  });
-
-  // ── Idle events ────────────────────────────────────────────────────────────
-  // Two event types, randomly selected, fire every 7–12 seconds so effects
-  // are noticeable within the first 10 seconds of watching.
-  //
-  // Type 1 (60%): body micro-jitter — brief haunted-by-repetition sensation.
-  // Type 2 (40%): corner-flash — registration marks flare up for 280ms,
-  //               as if the printing press briefly hiccupped.
-
-  var IDLE_MIN  = 7000;
-  var IDLE_RAND = 5000;
-  var IDLE_HOLD = 80;
-
-  function doIdleEvent() {
-    if (Math.random() < 0.6) {
-      // Type 1: body micro-jitter
-      document.body.classList.add('jitter');
-      setTimeout(function () {
-        document.body.classList.remove('jitter');
-      }, IDLE_HOLD);
-    } else {
-      // Type 2: corner-flash
-      var zone = document.querySelector('.zone');
-      zone.classList.add('corner-flash');
-      setTimeout(function () {
-        zone.classList.remove('corner-flash');
-      }, 280);
-    }
-    scheduleIdleEvent();
-  }
-
-  function scheduleIdleEvent() {
-    var delay = IDLE_MIN + Math.random() * IDLE_RAND;
-    setTimeout(doIdleEvent, delay);
-  }
-
-  scheduleIdleEvent();
-
-  // ── Animation stagger init ─────────────────────────────────────────────────
-  // Give each surreal element a random animation-delay offset so they
-  // don't all start in sync (makes the field feel more organic).
-  var elements = ['el-cloud', 'el-pear', 'el-plane', 'el-jar', 'el-sun'];
-  elements.forEach(function (id) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    // Random delay between 0 and half the element's own cycle
-    var delay = -(Math.random() * 6).toFixed(2) + 's';
-    el.style.animationDelay = delay;
-  });
-
-}());
+window.addEventListener("scroll", onScroll, { passive: true });
+reduceMotion.addEventListener?.("change", applyParallax);
+onScroll();
