@@ -1,113 +1,169 @@
-const PARALLAX_SPEED = {
-  back: 0.12,
-  mid: 0.32,
-  front: 0.55,
-};
+import { sceneObjects } from "./sceneConfig.js";
 
-const sceneObjects = [
-  { src: "assets/skvoznoe/ostrich.png", alt: "ostrich engraving", layer: "back", top: "5%", left: "6%", width: 420, rotate: -6, z: 1, floatAmplitude: 10, floatDuration: 15, floatDelay: 0.2, mobile: { top: "6%", left: "-16%", width: 220 } },
-  { src: "assets/skvoznoe/pelican.png", alt: "pelican engraving", layer: "back", top: "4%", left: "72%", width: 380, rotate: 4, z: 1, floatAmplitude: 8, floatDuration: 17, floatDelay: 1.3, mobile: { top: "8%", left: "62%", width: 180 } },
-  { src: "assets/skvoznoe/wine_press.png", alt: "wine press engraving", layer: "back", top: "41%", left: "78%", width: 300, rotate: -3, z: 1, floatAmplitude: 7, floatDuration: 16, floatDelay: 2.1, mobile: { hidden: true } },
-  { src: "assets/skvoznoe/duck_roast.png", alt: "duck roast engraving", layer: "mid", top: "18%", left: "39%", width: 340, rotate: 2, z: 2, floatAmplitude: 10, floatDuration: 14, floatDelay: 0.8, mobile: { top: "18%", left: "42%", width: 220 } },
-  { src: "assets/skvoznoe/sumo.png", alt: "sumo engraving", layer: "mid", top: "39%", left: "62%", width: 300, rotate: -2, z: 2, floatAmplitude: 8, floatDuration: 13, floatDelay: 1.1, mobile: { hidden: true } },
-  { src: "assets/skvoznoe/fish.png", alt: "fish engraving", layer: "mid", top: "71%", left: "13%", width: 260, rotate: 8, z: 2, floatAmplitude: 9, floatDuration: 12, floatDelay: 2.8, mobile: { top: "78%", left: "4%", width: 150 } },
-  { src: "assets/skvoznoe/book.png", alt: "book engraving", layer: "mid", top: "58%", left: "72%", width: 220, rotate: 12, z: 2, floatAmplitude: 7, floatDuration: 11, floatDelay: 0.5, mobile: { hidden: true } },
-  { src: "assets/skvoznoe/web_designer.png", alt: "web designer engraving", layer: "mid", top: "79%", left: "81%", width: 210, rotate: -4, z: 2, floatAmplitude: 6, floatDuration: 10, floatDelay: 1.7, mobile: { hidden: true } },
-  { src: "assets/skvoznoe/knuckles.png", alt: "knuckles engraving", layer: "front", top: "42%", left: "18%", width: 240, rotate: -12, z: 3, floatAmplitude: 10, floatDuration: 12, floatDelay: 0.4, mobile: { top: "48%", left: "0%", width: 160 } },
-  { src: "assets/skvoznoe/gold_teeth.png", alt: "gold teeth engraving", layer: "front", top: "64%", left: "47%", width: 260, rotate: 2, z: 3, floatAmplitude: 8, floatDuration: 10, floatDelay: 1.9, mobile: { top: "72%", left: "38%", width: 180 } },
-  { src: "assets/skvoznoe/axe_head.png", alt: "axe in head engraving", layer: "front", top: "12%", left: "48%", width: 240, rotate: -8, z: 3, floatAmplitude: 7, floatDuration: 12, floatDelay: 0.9, mobile: { top: "6%", left: "38%", width: 160 } },
-  { src: "assets/skvoznoe/matchbox.png", alt: "matchbox engraving", layer: "front", top: "61%", left: "2%", width: 210, rotate: 6, z: 3, floatAmplitude: 6, floatDuration: 11, floatDelay: 2.2, mobile: { top: "70%", left: "-2%", width: 130 } },
-  { src: "assets/skvoznoe/yogi.png", alt: "yogi engraving", layer: "front", top: "73%", left: "26%", width: 210, rotate: -3, z: 3, floatAmplitude: 8, floatDuration: 13, floatDelay: 1.2, mobile: { hidden: true } },
-  { src: "assets/skvoznoe/priest.png", alt: "priest engraving", layer: "front", top: "15%", left: "82%", width: 220, rotate: 4, z: 3, floatAmplitude: 7, floatDuration: 15, floatDelay: 2.7, mobile: { hidden: true } },
-  { src: "assets/skvoznoe/salo.png", alt: "salo engraving", layer: "front", top: "81%", left: "46%", width: 200, rotate: 1, z: 3, floatAmplitude: 5, floatDuration: 9, floatDelay: 0.6, mobile: { top: "84%", left: "62%", width: 120 } },
-];
+const RADIUS_FACTOR = 0.32;
+const INITIAL_SPEED = 28;
+const DAMPING = 0.999;
+const WANDER = 6;
+const RESTITUTION = 0.98;
+const MIN_SPEED = 8;
+const MAX_SPEED = 90;
 
 const sceneRoot = document.getElementById("scene-objects");
 const assetHint = document.getElementById("asset-hint");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-let scrollY = 0;
-let ticking = false;
-const objectNodes = [];
+const isMobile = () => window.matchMedia("(max-width: 768px)").matches;
 
 function setVar(el, name, value) {
   if (value !== undefined && value !== null) el.style.setProperty(name, value);
 }
 
+function pctToPx(v, total) {
+  if (typeof v === "string" && v.endsWith("%")) return (parseFloat(v) / 100) * total;
+  return parseFloat(v) || 0;
+}
+
 function createObject(item) {
   const node = document.createElement("div");
   node.className = `object layer-${item.layer}${item.mobile?.hidden ? " mobile-hidden" : ""}`;
-
-  setVar(node, "--top", item.top);
-  setVar(node, "--left", item.left);
-  setVar(node, "--width", `${item.width}px`);
   setVar(node, "--z", item.z);
   setVar(node, "--rotate", `${item.rotate}deg`);
-  setVar(node, "--float-amplitude", `${item.floatAmplitude}px`);
-  setVar(node, "--float-duration", `${item.floatDuration}s`);
-  setVar(node, "--float-delay", `${item.floatDelay}s`);
-  setVar(node, "--mobile-top", item.mobile?.top);
-  setVar(node, "--mobile-left", item.mobile?.left);
-  setVar(node, "--mobile-width", item.mobile?.width ? `${item.mobile.width}px` : undefined);
-
-  const floatWrap = document.createElement("div");
-  floatWrap.className = "float-wrap";
 
   const img = document.createElement("img");
   img.src = item.src;
-  img.alt = item.alt;
+  img.alt = item.alt || "";
   img.loading = "eager";
   img.decoding = "async";
-
-  floatWrap.appendChild(img);
-  node.appendChild(floatWrap);
+  node.appendChild(img);
   sceneRoot.appendChild(node);
-
-  objectNodes.push({ node, layer: item.layer });
-  return img;
+  return { node, img, item };
 }
 
-function applyParallax() {
-  const disabled = reduceMotion.matches;
-  for (const entry of objectNodes) {
-    const y = disabled ? 0 : scrollY * PARALLAX_SPEED[entry.layer];
-    entry.node.style.setProperty("--parallax-y", `${y}px`);
+const entries = sceneObjects.map(createObject);
+const bodies = [];
+
+function layout() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const mob = isMobile();
+  bodies.length = 0;
+  for (const entry of entries) {
+    const { node, item } = entry;
+    if (mob && item.mobile?.hidden) continue;
+    const top = mob && item.mobile?.top !== undefined ? item.mobile.top : item.top;
+    const left = mob && item.mobile?.left !== undefined ? item.mobile.left : item.left;
+    const width = mob && item.mobile?.width !== undefined ? item.mobile.width : item.width;
+    setVar(node, "--width", `${width}px`);
+    const x = pctToPx(left, vw) + width / 2;
+    const y = pctToPx(top, vh) + width / 2;
+    const ang = Math.random() * Math.PI * 2;
+    bodies.push({
+      node,
+      x,
+      y,
+      vx: Math.cos(ang) * INITIAL_SPEED,
+      vy: Math.sin(ang) * INITIAL_SPEED,
+      r: width * RADIUS_FACTOR,
+      w: width,
+    });
   }
-  ticking = false;
 }
 
-function onScroll() {
-  scrollY = window.scrollY || window.pageYOffset || 0;
-  if (!ticking) {
-    ticking = true;
-    requestAnimationFrame(applyParallax);
+function clampSpeed(b) {
+  const s = Math.hypot(b.vx, b.vy);
+  if (s > MAX_SPEED) {
+    b.vx = (b.vx / s) * MAX_SPEED;
+    b.vy = (b.vy / s) * MAX_SPEED;
+  } else if (s < MIN_SPEED) {
+    const ang = s > 0 ? Math.atan2(b.vy, b.vx) : Math.random() * Math.PI * 2;
+    b.vx = Math.cos(ang) * MIN_SPEED;
+    b.vy = Math.sin(ang) * MIN_SPEED;
   }
 }
 
-function showMissingAssets(missing) {
-  if (!missing.length) return;
-  assetHint.hidden = false;
-  assetHint.textContent = `Missing assets (${missing.length}). Upload PNGs to /assets/skvoznoe/: ${missing.slice(0, 4).join(", ")}${
-    missing.length > 4 ? "…" : ""
-  }`;
+function step(dt) {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  for (const b of bodies) {
+    b.vx += (Math.random() - 0.5) * WANDER * dt;
+    b.vy += (Math.random() - 0.5) * WANDER * dt;
+    b.vx *= DAMPING;
+    b.vy *= DAMPING;
+    clampSpeed(b);
+    b.x += b.vx * dt;
+    b.y += b.vy * dt;
+    if (b.x - b.r < 0) { b.x = b.r; b.vx = Math.abs(b.vx); }
+    else if (b.x + b.r > vw) { b.x = vw - b.r; b.vx = -Math.abs(b.vx); }
+    if (b.y - b.r < 0) { b.y = b.r; b.vy = Math.abs(b.vy); }
+    else if (b.y + b.r > vh) { b.y = vh - b.r; b.vy = -Math.abs(b.vy); }
+  }
+
+  for (let i = 0; i < bodies.length; i++) {
+    for (let j = i + 1; j < bodies.length; j++) {
+      const a = bodies[i], c = bodies[j];
+      const dx = c.x - a.x, dy = c.y - a.y;
+      const minD = a.r + c.r;
+      const dist2 = dx * dx + dy * dy;
+      if (dist2 >= minD * minD || dist2 < 0.0001) continue;
+      const dist = Math.sqrt(dist2);
+      const nx = dx / dist, ny = dy / dist;
+      const overlap = (minD - dist) / 2;
+      a.x -= nx * overlap; a.y -= ny * overlap;
+      c.x += nx * overlap; c.y += ny * overlap;
+      const rvx = c.vx - a.vx, rvy = c.vy - a.vy;
+      const relN = rvx * nx + rvy * ny;
+      if (relN >= 0) continue;
+      const p = (1 + RESTITUTION) * relN / 2;
+      a.vx += p * nx; a.vy += p * ny;
+      c.vx -= p * nx; c.vy -= p * ny;
+    }
+  }
+
+  for (const b of bodies) {
+    b.node.style.setProperty("--x", `${b.x - b.w / 2}px`);
+    b.node.style.setProperty("--y", `${b.y - b.w / 2}px`);
+  }
 }
 
-const probes = sceneObjects.map((item) => createObject(item));
+let lastT = 0;
+let running = false;
+function frame(t) {
+  if (!running) return;
+  const dt = lastT ? Math.min(0.05, (t - lastT) / 1000) : 0.016;
+  lastT = t;
+  if (!reduceMotion.matches) step(dt);
+  requestAnimationFrame(frame);
+}
+
+function start() {
+  if (running) return;
+  running = true;
+  lastT = 0;
+  requestAnimationFrame(frame);
+}
+
+let settled = 0;
 const missing = [];
-let settledCount = 0;
-
-function settle() {
-  settledCount += 1;
-  if (settledCount === probes.length) showMissingAssets(missing);
+function onSettled() {
+  settled += 1;
+  if (settled !== entries.length) return;
+  if (missing.length && assetHint) {
+    assetHint.hidden = false;
+    assetHint.textContent = `Missing (${missing.length}): ${missing.slice(0, 4).join(", ")}${missing.length > 4 ? "…" : ""}`;
+  }
+  layout();
+  start();
 }
-
-probes.forEach((img, index) => {
+entries.forEach(({ img, item }) => {
   img.addEventListener("error", () => {
-    missing.push(sceneObjects[index].src.replace("assets/skvoznoe/", ""));
-    settle();
+    missing.push(item.src.replace("assets/skvoznoe/", ""));
+    onSettled();
   });
-  img.addEventListener("load", settle);
+  img.addEventListener("load", onSettled);
 });
 
-window.addEventListener("scroll", onScroll, { passive: true });
-reduceMotion.addEventListener?.("change", applyParallax);
-onScroll();
+let resizeRaf = 0;
+window.addEventListener("resize", () => {
+  if (resizeRaf) cancelAnimationFrame(resizeRaf);
+  resizeRaf = requestAnimationFrame(layout);
+});
